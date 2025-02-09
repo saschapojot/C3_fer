@@ -3,7 +3,7 @@ from decimal import Decimal, getcontext
 from math import factorial
 #This script creates directories and conf files for mc
 
-def format_using_decimal(value, precision=25):
+def format_using_decimal(value, precision=15):
     # Set the precision higher to ensure correct conversion
     getcontext().prec = precision + 2
     # Convert the float to a Decimal with exact precision
@@ -14,7 +14,10 @@ def format_using_decimal(value, precision=25):
 
 N=5 #unit cell number
 TVals=[0.1,1,1.5]
-
+#lattice const
+a=1
+#charge
+q=1
 dataRoot="./dataAll/"
 dataOutDir=dataRoot
 
@@ -47,7 +50,8 @@ print(f"alpha1={alpha1}, alpha2={alpha2}, alpha3={alpha3}, alpha4={alpha4}, alph
 print(f"J={J}")
 
 NStr=format_using_decimal(N)
-
+aStr=format_using_decimal(a)
+qStr=format_using_decimal(q)
 alpha1_Str=format_using_decimal(alpha1)
 alpha2_Str=format_using_decimal(alpha2)
 alpha3_Str=format_using_decimal(alpha3)
@@ -102,6 +106,10 @@ def contents_to_conf(k):
         f"J={J_Str}\n",
         "\n",
         f"N={NStr}\n",
+        "\n",
+        f"a={aStr}\n",
+        "\n",
+        f"q={qStr}\n",
         "\n",
         "erase_data_if_exist=False\n",
         "\n",
