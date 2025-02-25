@@ -9,6 +9,7 @@
 #include <boost/python.hpp>
 #include <boost/python/numpy.hpp>
 #include <fstream>
+#include <Python.h>
 #include <random>
 #include <sstream>
 #include <string>
@@ -21,7 +22,7 @@ namespace np = boost::python::numpy;
 class mc_computation
 {
     public:
-    mc_computation(const std::string &cppInParamsFileName): e2(),distUnif01(0.0, 1.0)
+    mc_computation(const std::string &cppInParamsFileName): e2(std::random_device{}()),distUnif01(0.0, 1.0)
     {
 
         std::ifstream file(cppInParamsFileName);
@@ -271,6 +272,16 @@ class mc_computation
             this->Qy_all_ptr=std::shared_ptr<double[]>(new double[sweepToWrite*N0*N1 ],
                                                         std::default_delete<double[]>());
 
+            this->Px_init=std::shared_ptr<double[]>(new double[N0*N1 ],
+                                                        std::default_delete<double[]>());
+            this->Py_init=std::shared_ptr<double[]>(new double[N0*N1 ],
+                                                        std::default_delete<double[]>());
+
+            this->Qx_init=std::shared_ptr<double[]>(new double[N0*N1 ],
+                                                        std::default_delete<double[]>());
+            this->Qy_init=std::shared_ptr<double[]>(new double[N0*N1 ],
+                                                        std::default_delete<double[]>());
+
         }
         catch (const std::bad_alloc &e) {
             std::cerr << "Memory allocation error: " << e.what() << std::endl;
@@ -307,19 +318,129 @@ class mc_computation
         this->Gamma=arma::zeros<arma::dmat>(N0*N1, N0*N1);
         this->Theta=arma::zeros<arma::dmat>(N0*N1, N0*N1);
         this->Lambda=arma::zeros<arma::dmat>(N0*N1, N0*N1);
+
+        this->unif_in_0_N0N1=std::uniform_int_distribution<int>(0,N0*N1);
+
+        this->dipole_upper_bound=1.0/4.0*1.0/std::sqrt(3.0)*a*q;
+        this->dipole_lower_bound=-dipole_upper_bound;
+        std::cout<<"dipole_upper_bound="<<dipole_upper_bound<<std::endl;
+        std::cout<<"dipole_lower_bound="<<dipole_lower_bound<<std::endl;
+        this->a_squared=std::pow(a,2.0);
+        this->J_over_a_squared=J/a_squared;
+        std::cout<<"J_over_a_squared="<<J_over_a_squared<<std::endl;
+        // int random_number=unif_in_0_N0N1(e2);
+        //
+        // std::cout << "Random number: " << random_number << std::endl;
+
+
     }//end constructor
 public:
+    void init_and_run();
+    void execute_mc(const std::shared_ptr<double[]>&Px_vec,
+        const std::shared_ptr<double[]>& Py_vec,
+        const std::shared_ptr<double[]>& Qx_vec,
+        const std::shared_ptr<double[]>& Qy_vec,
+        const int & flushNum );
+
+    void execute_mc_one_sweep(arma::dvec& Px_arma_vec_curr,
+       arma::dvec& Py_arma_vec_curr,
+       arma::dvec& Qx_arma_vec_curr,
+       arma::dvec& Qy_arma_vec_curr,
+       double &UCurr,
+       arma::dvec& Px_arma_vec_next,
+       arma::dvec& Py_arma_vec_next,
+       arma::dvec& Qx_arma_vec_next,
+       arma::dvec& Qy_arma_vec_next);
+
+    ///
+    /// @param n0
+    /// @param n1
+    /// @param Px_arma_vec_curr
+    /// @param Px_arma_vec_next
+    /// @param Py_arma_vec_curr
+    /// @param Qx_arma_vec_curr
+    /// @param Qy_arma_vec_curr
+    /// @param UCurr
+    /// @param UNext
+    void HPx_update(const int &n0,const int &n1,const arma::dvec & Px_arma_vec_curr,
+                    const arma::dvec &Px_arma_vec_next ,
+                    const arma::dvec & Py_arma_vec_curr,
+                    const arma::dvec &Qx_arma_vec_curr,
+                    const arma::dvec &Qy_arma_vec_curr,
+                    double &UCurr,double &UNext);
+
+    void init_Px_Py_Qx_Qy();
+   void load_pickle_data(const std::string &filename, std::shared_ptr<double[]> &data_ptr, std::size_t size);
+
+    void save_array_to_pickle(const std::shared_ptr<double[]> &ptr, int size, const std::string &filename);
     void init_mats();
     ///
     /// @param n0
     /// @param n1
     /// @return flatenned index
     int double_ind_to_flat_ind(const int& n0, const int& n1);
+
+    ///
+    /// @param x
+    /// @param leftEnd
+    /// @param rightEnd
+    /// @param eps
+    /// @return return a value within distance eps from x, on the open interval (leftEnd, rightEnd)
+    double generate_uni_open_interval(const double &x, const double &leftEnd, const double &rightEnd, const double &eps);
+
+    void proposal_uni(const arma::dvec& arma_vec_curr, arma::dvec& arma_vec_next,
+        const int & flattened_ind);
+
+    ///
+    /// @param x proposed value
+    /// @param y current value
+    /// @param a left end of interval
+    /// @param b right end of interval
+    /// @param epsilon half length
+    /// @return proposal probability S(x|y)
+    double S_uni(const double &x, const double &y,const double &a, const double &b, const double &epsilon);
+
+    ///
+    /// @param n0 index
+    /// @param n1 index
+    /// @param Px_arma_vec Px
+    /// @param Py_arma_vec Py
+    /// @return self energy H1
+    double H1(const int &n0,const int& n1, const arma::dvec & Px_arma_vec,const arma::dvec & Py_arma_vec);
+
+    ///
+    /// @param n0 index
+    /// @param n1 index
+    /// @param Qx_arma_vec Qx
+    /// @param Qy_arma_vec Qy
+    /// @return self energy H2
+    double H2(const int& n0, const int& n1, const arma::dvec &Qx_arma_vec,const arma::dvec &Qy_arma_vec);
+
+
+    template<class T>
+    void print_shared_ptr(const std::shared_ptr<T> &ptr,const int& size){
+        if (!ptr) {
+            std::cout << "Pointer is null." << std::endl;
+            return;
+        }
+
+        for(int i=0;i<size;i++){
+            if(i<size-1){
+                std::cout<<ptr[i]<<",";
+            }
+            else{
+                std::cout<<ptr[i]<<std::endl;
+            }
+        }
+
+    }//end print_shared_ptr
 public:
     double T;// temperature
     double beta;
     double a;
+    double a_squared;
     double J;
+    double J_over_a_squared;
 
     double h;// step size
     int sweepToWrite;
@@ -343,10 +464,27 @@ public:
     std::shared_ptr<double[]> Qx_all_ptr;//all Qx data
     std::shared_ptr<double[]> Qy_all_ptr;//all Qy data
 
+    //initial value
+    std::shared_ptr<double[]> Px_init;
+    std::shared_ptr<double[]> Py_init;
+    std::shared_ptr<double[]> Qx_init;
+    std::shared_ptr<double[]> Qy_init;
+
+    // //for computation
+    // arma::dvec Px_arma_vec;
+    // arma::dvec Py_arma_vec;
+    //
+    // arma::dvec Qx_arma_vec;
+    // arma::dvec Qy_arma_vec;
+
     double q;
     double alpha1,alpha2,alpha3,alpha4,alpha5,alpha6,alpha7;
     int N0,N1;
 
     arma::dmat A,B,C,G,R,Gamma,Theta,Lambda;
 
+    std::uniform_int_distribution<int> unif_in_0_N0N1;
+
+    double dipole_lower_bound;
+    double dipole_upper_bound;
 };
