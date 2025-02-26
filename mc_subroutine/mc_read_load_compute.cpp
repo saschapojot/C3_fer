@@ -409,13 +409,13 @@ double mc_computation::S_uni(const double& x, const double& y, const double& a, 
 /// @param Px_arma_vec Px
 /// @param Py_arma_vec Py
 /// @return self energy H1
-double mc_computation::H1(const int& n0, const int& n1, const arma::dvec& Px_arma_vec, const arma::dvec& Py_arma_vec)
+double mc_computation::H1(const int& flattened_ind, const arma::dvec& Px_arma_vec, const arma::dvec& Py_arma_vec)
 {
-    int flat_ind = double_ind_to_flat_ind(n0, n1);
+    // int flat_ind = double_ind_to_flat_ind(n0, n1);
 
-    double px_n0n1 = Px_arma_vec(flat_ind);
+    double px_n0n1 = Px_arma_vec(flattened_ind);
 
-    double py_n0n1 = Py_arma_vec(flat_ind);
+    double py_n0n1 = Py_arma_vec(flattened_ind);
 
 
     double squared_px_n0n1 = std::pow(px_n0n1, 2.0);
@@ -448,13 +448,13 @@ double mc_computation::H1(const int& n0, const int& n1, const arma::dvec& Px_arm
 /// @param Qx_arma_vec Qx
 /// @param Qy_arma_vec Qy
 /// @return self energy H2
-double mc_computation::H2(const int& n0, const int& n1, const arma::dvec& Qx_arma_vec, const arma::dvec& Qy_arma_vec)
+double mc_computation::H2(const int& flattened_ind, const arma::dvec& Qx_arma_vec, const arma::dvec& Qy_arma_vec)
 {
-    int flat_ind = double_ind_to_flat_ind(n0, n1);
+    // int flat_ind = double_ind_to_flat_ind(n0, n1);
 
-    double qx_n0n1 = Qx_arma_vec(flat_ind);
+    double qx_n0n1 = Qx_arma_vec(flattened_ind);
 
-    double qy_n0n1 = Qy_arma_vec(flat_ind);
+    double qy_n0n1 = Qy_arma_vec(flattened_ind);
 
     double squared_qx_n0n1 = std::pow(qx_n0n1, 2.0);
 
@@ -506,7 +506,19 @@ void mc_computation::execute_mc(const std::shared_ptr<double[]>& Px_vec,
 
     arma::dvec Qy_arma_vec_curr(Qy_vec.get(), N0 * N1);
     arma::dvec Qy_arma_vec_next(N0 * N1, arma::fill::zeros);
+
+    double UCurr=0;
+    int flushThisFileStart=this->flushLastFile+1;
+    int sweepStart =flushThisFileStart*sweepToWrite*sweep_multiple;
+    for (int fls = 0; fls < flushNum; fls++)
+    {
+        for (int swp = 0; swp < sweepToWrite*sweep_multiple; swp++)
+        {
+        }//end sweep for
+    }//end flush for loop
+
 }
+
 ///
 /// @param n0
 /// @param n1
@@ -517,67 +529,263 @@ void mc_computation::execute_mc(const std::shared_ptr<double[]>& Px_vec,
 /// @param Qy_arma_vec_curr
 /// @param UCurr
 /// @param UNext
-void mc_computation::HPx_update(const int &n0,const int &n1,const arma::dvec & Px_arma_vec_curr,
-       const arma::dvec &Px_arma_vec_next ,
-                    const arma::dvec & Py_arma_vec_curr,
-                    const arma::dvec &Qx_arma_vec_curr,
-                    const arma::dvec &Qy_arma_vec_curr,
-                    double &UCurr,double &UNext)
+void mc_computation::HPx_update(const int& flattened_ind, const arma::dvec& Px_arma_vec_curr,
+                                const arma::dvec& Px_arma_vec_next,
+                                const arma::dvec& Py_arma_vec_curr,
+                                const arma::dvec& Qx_arma_vec_curr,
+                                const arma::dvec& Qy_arma_vec_curr,
+                                double& UCurr, double& UNext)
 {
-double H1_self_curr=this->H1(n0,n1,Px_arma_vec_curr,Py_arma_vec_curr);
-    double H1_self_next=this->H1(n0,n1,Px_arma_vec_next,Py_arma_vec_curr);
+    // int flattened_ind=this->double_ind_to_flat_ind(n0,n1);
 
-    int flattened_ind=this->double_ind_to_flat_ind(n0,n1);
-
-    double right_factor1=J_over_a_squared*arma::dot(A.row(flattened_ind),Px_arma_vec_curr);
-
-    double right_factor2=-2.0*J_over_a_squared*arma::dot(B.row(flattened_ind),Px_arma_vec_curr);
-
-    double right_factor3=-std::sqrt(3.0)*J_over_a_squared*arma::dot(C.row(flattened_ind),Py_arma_vec_curr);
-
-    double right_factor4=J_over_a_squared*arma::dot(R.row(flattened_ind),Qx_arma_vec_curr);
-
-    double right_factor5=-2.0*J_over_a_squared*arma::dot(Gamma.row(flattened_ind),Qx_arma_vec_curr);
-
-    double right_factor6=-2.0*J_over_a_squared*arma::dot(Theta.row(flattened_ind),Qy_arma_vec_curr);
-
-    double right_factor=right_factor1+right_factor2+right_factor3
-                        +right_factor4+right_factor5+right_factor6;
-
-    double E_int_curr=Px_arma_vec_curr(flattened_ind)*right_factor;
-
-    double E_int_next=Px_arma_vec_next(flattened_ind)*right_factor;
-
-    UCurr=H1_self_curr+E_int_curr;
-
-    UNext=H1_self_next+E_int_next;
+    double H1_self_curr = this->H1(flattened_ind, Px_arma_vec_curr, Py_arma_vec_curr);
+    double H1_self_next = this->H1(flattened_ind, Px_arma_vec_next, Py_arma_vec_curr);
 
 
+    double right_factor1 = J_over_a_squared * arma::dot(A.row(flattened_ind), Px_arma_vec_curr);
+
+    double right_factor2 = -2.0 * J_over_a_squared * arma::dot(B.row(flattened_ind), Px_arma_vec_curr);
+
+    double right_factor3 = -std::sqrt(3.0) * J_over_a_squared * arma::dot(C.row(flattened_ind), Py_arma_vec_curr);
+
+    double right_factor4 = J_over_a_squared * arma::dot(R.row(flattened_ind), Qx_arma_vec_curr);
+
+    double right_factor5 = -2.0 * J_over_a_squared * arma::dot(Gamma.row(flattened_ind), Qx_arma_vec_curr);
+
+    double right_factor6 = -2.0 * J_over_a_squared * arma::dot(Theta.row(flattened_ind), Qy_arma_vec_curr);
+
+    double right_factor = right_factor1 + right_factor2 + right_factor3
+        + right_factor4 + right_factor5 + right_factor6;
+
+    double E_int_curr = Px_arma_vec_curr(flattened_ind) * right_factor;
+
+    double E_int_next = Px_arma_vec_next(flattened_ind) * right_factor;
+
+    UCurr = H1_self_curr + E_int_curr;
+
+    UNext = H1_self_next + E_int_next;
+}
+
+void mc_computation::HPy_update(const int& flattened_ind,
+                                const arma::dvec& Py_arma_vec_curr, const arma::dvec& Py_arma_vec_next,
+                                const arma::dvec& Px_arma_vec_curr, const arma::dvec& Qx_arma_vec_curr,
+                                const arma::dvec& Qy_arma_vec_curr,
+                                double& UCurr, double& UNext)
+{
+    double H1_self_curr = this->H1(flattened_ind, Px_arma_vec_curr, Py_arma_vec_curr);
+
+    double H1_self_next = this->H1(flattened_ind, Px_arma_vec_curr, Py_arma_vec_next);
+
+    double right_factor1 = J_over_a_squared * arma::dot(A.row(flattened_ind), Py_arma_vec_curr);
+
+    double right_factor2 = -std::sqrt(3.0) * J_over_a_squared * arma::dot(C.row(flattened_ind), Px_arma_vec_curr);
+    double right_factor3 = -3.0 / 2.0 * J_over_a_squared * arma::dot(G.row(flattened_ind), Py_arma_vec_curr);
+
+    double right_factor4 = J_over_a_squared * arma::dot(R.row(flattened_ind), Qy_arma_vec_curr);
+
+    double right_factor5 = -2.0 * J_over_a_squared * arma::dot(Theta.row(flattened_ind), Qx_arma_vec_curr);
+
+    double right_factor6 = -2.0 * J_over_a_squared * arma::dot(Lambda.row(flattened_ind), Qy_arma_vec_curr);
+
+    double right_factor = right_factor1 + right_factor2 + right_factor3
+        + right_factor4 + right_factor5 + right_factor6;
+
+    double E_int_curr = Py_arma_vec_curr(flattened_ind) * right_factor;
+
+    double E_int_next = Py_arma_vec_next(flattened_ind) * right_factor;
+
+    UCurr = H1_self_curr + E_int_curr;
+
+    UNext = H1_self_next + E_int_next;
+}
 
 
+double mc_computation::acceptanceRatio_uni(const arma::dvec& arma_vec_curr,
+                                           const arma::dvec& arma_vec_next, const int& flattened_ind,
+                                           const double& UCurr, const double& UNext)
+{
+    double numerator = -this->beta * UNext;
+    double denominator = -this->beta * UCurr;
+    double R = std::exp(numerator - denominator);
+
+    double S_curr_next = S_uni(arma_vec_curr(flattened_ind), arma_vec_next(flattened_ind),
+                               dipole_lower_bound, dipole_upper_bound, h);
+
+    double S_next_curr = S_uni(arma_vec_next(flattened_ind), arma_vec_curr(flattened_ind),
+                               dipole_lower_bound, dipole_upper_bound, h);
+
+    double ratio = S_curr_next / S_next_curr;
+
+    if (std::fetestexcept(FE_DIVBYZERO))
+    {
+        std::cout << "Division by zero exception caught." << std::endl;
+        std::exit(15);
+    }
+    if (std::isnan(ratio))
+    {
+        std::cout << "The result is NaN." << std::endl;
+        std::exit(15);
+    }
+    R *= ratio;
+
+    return std::min(1.0, R);
 }
 
 void mc_computation::execute_mc_one_sweep(arma::dvec& Px_arma_vec_curr,
-      arma::dvec& Py_arma_vec_curr,
-      arma::dvec& Qx_arma_vec_curr,
-      arma::dvec& Qy_arma_vec_curr,
-      double &UCurr,
-      arma::dvec& Px_arma_vec_next,
-      arma::dvec& Py_arma_vec_next,
-      arma::dvec& Qx_arma_vec_next,
-      arma::dvec& Qy_arma_vec_next)
+                                          arma::dvec& Py_arma_vec_curr,
+                                          arma::dvec& Qx_arma_vec_curr,
+                                          arma::dvec& Qy_arma_vec_curr,
+                                          double& UCurr,
+                                          arma::dvec& Px_arma_vec_next,
+                                          arma::dvec& Py_arma_vec_next,
+                                          arma::dvec& Qx_arma_vec_next,
+                                          arma::dvec& Qy_arma_vec_next)
 {
+    double UNext = 0;
+    //update Px
+    for (int i = 0; i < N0 * N1; i++)
+    {
+        int flattened_ind = unif_in_0_N0N1(e2);
+        this->proposal_uni(Px_arma_vec_curr, Px_arma_vec_next, flattened_ind);
+        this->HPx_update(flattened_ind, Px_arma_vec_curr, Px_arma_vec_next,
+                         Py_arma_vec_curr, Qx_arma_vec_curr, Qy_arma_vec_curr, UCurr, UNext);
+
+        double r = this->acceptanceRatio_uni(Px_arma_vec_curr, Px_arma_vec_next,
+                                             flattened_ind, UCurr, UNext);
+        double u = distUnif01(e2);
+        if (u <= r)
+        {
+            Px_arma_vec_curr = Px_arma_vec_next;
+            UCurr = UNext;
+        } //end of accept-reject
+    } //end updating Px
+
+    //update Py
+    for (int i = 0; i < N0 * N1; i++)
+    {
+        int flattened_ind = unif_in_0_N0N1(e2);
+        this->proposal_uni(Py_arma_vec_curr, Py_arma_vec_next, flattened_ind);
+        this->HPy_update(flattened_ind, Py_arma_vec_curr, Py_arma_vec_next,
+                         Px_arma_vec_curr, Qx_arma_vec_curr, Qy_arma_vec_curr, UCurr, UNext);
+
+        double r = this->acceptanceRatio_uni(Py_arma_vec_curr, Py_arma_vec_next, flattened_ind, UCurr, UNext);
+
+        double u = distUnif01(e2);
+        if (u <= r)
+        {
+            Py_arma_vec_curr = Py_arma_vec_next;
+            UCurr = UNext;
+        } //end of accept-reject
+    } //end updating Py
+
+    //update Qx
+    for (int i = 0; i < N0 * N1; i++)
+    {
+        int flattened_ind = unif_in_0_N0N1(e2);
+        this->proposal_uni(Qx_arma_vec_curr, Qx_arma_vec_next, flattened_ind);
+
+        this->HQx_update(flattened_ind, Qx_arma_vec_curr, Qx_arma_vec_next,
+                         Px_arma_vec_curr, Py_arma_vec_curr,
+                         Qy_arma_vec_curr,
+                         UCurr, UNext);
+
+        double r = this->acceptanceRatio_uni(Qx_arma_vec_curr, Qx_arma_vec_next, flattened_ind, UCurr, UNext);
+        double u = distUnif01(e2);
+        if (u <= r)
+        {
+            Qx_arma_vec_curr = Qx_arma_vec_next;
+            UCurr = UNext;
+        } //end of accept-reject
+    } //end updating Qx
+
+    //update Qy
+    for (int i = 0; i < N0 * N1; i++)
+    {
+        int flattened_ind = unif_in_0_N0N1(e2);
+        this->proposal_uni(Qy_arma_vec_curr, Qy_arma_vec_next, flattened_ind);
+        this->HQy_update(flattened_ind, Qy_arma_vec_curr, Qy_arma_vec_next,
+                         Px_arma_vec_curr,
+                         Py_arma_vec_curr,
+                         Qx_arma_vec_curr,
+                         UCurr, UNext);
+    } //end updating Qy
+}
+
+void mc_computation::HQy_update(const int& flattened_ind,
+                                const arma::dvec& Qy_arma_vec_curr, const arma::dvec& Qy_arma_vec_next,
+                                const arma::dvec& Px_arma_vec_curr,
+                                const arma::dvec& Py_arma_vec_curr,
+                                const arma::dvec& Qx_arma_vec_curr,
+                                double& UCurr, double& UNext)
+{
+    double H2_self_curr = this->H2(flattened_ind, Qx_arma_vec_curr, Qy_arma_vec_curr);
+
+    double H2_self_next = this->H2(flattened_ind, Qx_arma_vec_curr, Qy_arma_vec_next);
+
+    double factor1 = J_over_a_squared * arma::dot(Py_arma_vec_curr, R.col(flattened_ind));
+
+    double factor2 = -2.0 * J_over_a_squared * arma::dot(Px_arma_vec_curr, Theta.col(flattened_ind));
+
+    double factor3 = -2.0 * J_over_a_squared * arma::dot(Py_arma_vec_curr, Lambda.col(flattened_ind));
+
+    double factor4 = J_over_a_squared * arma::dot(A.row(flattened_ind), Qy_arma_vec_curr);
+
+    double factor5 = -std::sqrt(3.0) * J_over_a_squared * arma::dot(C.row(flattened_ind), Qx_arma_vec_curr);
+
+    double factor6 = -3.0 / 2.0 * J_over_a_squared * arma::dot(G.row(flattened_ind), Qy_arma_vec_curr);
+
+    double factor = factor1 + factor2 + factor3
+        + factor4 + factor5 + factor6;
+
+    double E_int_curr = Qy_arma_vec_curr(flattened_ind) * factor;
+
+    double E_int_next = Qy_arma_vec_next(flattened_ind) * factor;
+
+    UCurr = H2_self_curr + E_int_curr;
+
+    UNext = H2_self_next + E_int_next;
+}
+
+void mc_computation::HQx_update(const int& flattened_ind,
+                                const arma::dvec& Qx_arma_vec_curr, const arma::dvec& Qx_arma_vec_next,
+                                const arma::dvec& Px_arma_vec_curr,
+                                const arma::dvec& Py_arma_vec_curr,
+                                const arma::dvec& Qy_arma_vec_curr,
+                                double& UCurr, double& UNext)
+{
+    double H2_self_curr = this->H2(flattened_ind, Qx_arma_vec_curr, Qy_arma_vec_curr);
+    double H2_self_next = this->H2(flattened_ind, Qx_arma_vec_next, Qy_arma_vec_curr);
+
+    double factor1 = J_over_a_squared * arma::dot(Px_arma_vec_curr, R.col(flattened_ind));
+
+    double factor2 = -2.0 * J_over_a_squared * arma::dot(Px_arma_vec_curr, Gamma.col(flattened_ind));
+
+    double factor3 = -2.0 * J_over_a_squared * arma::dot(Py_arma_vec_curr, Theta.col(flattened_ind));
+
+    double factor4 = J_over_a_squared * arma::dot(A.row(flattened_ind), Qx_arma_vec_curr);
+
+    double factor5 = -2.0 * J_over_a_squared * arma::dot(B.row(flattened_ind), Qx_arma_vec_curr);
+
+    double factor6 = -std::sqrt(3.0) * J_over_a_squared * arma::dot(C.row(flattened_ind), Qy_arma_vec_curr);
 
 
+    double factor = factor1 + factor2 + factor3
+        + factor4 + factor5 + factor6;
 
+    double E_int_curr = Qx_arma_vec_curr(flattened_ind) * factor;
 
+    double E_int_next = Qx_arma_vec_next(flattened_ind) * factor;
+
+    UCurr = H2_self_curr + E_int_curr;
+
+    UNext = H2_self_next + E_int_next;
 }
 
 void mc_computation::proposal_uni(const arma::dvec& arma_vec_curr, arma::dvec& arma_vec_next,
-        const int & flattened_ind)
+                                  const int& flattened_ind)
 {
-
-    double dp_val_new=this->generate_uni_open_interval(arma_vec_curr(flattened_ind),dipole_lower_bound,dipole_upper_bound,h);
-    arma_vec_next=arma_vec_curr;
-    arma_vec_next(flattened_ind)=dp_val_new;
+    double dp_val_new = this->generate_uni_open_interval(arma_vec_curr(flattened_ind), dipole_lower_bound,
+                                                         dipole_upper_bound, h);
+    arma_vec_next = arma_vec_curr;
+    arma_vec_next(flattened_ind) = dp_val_new;
 }
