@@ -13,3 +13,11 @@ To run 1 pass of mc with checking statistics
 1. cmake .
 2. make run_mc
 3. python exec_checking.py T N lastFileNum
+4. run 3 until equilibrium
+5. python exec_noChecking.py T N
+
+
+#############################
+after mc completes,
+1. cd data2csv/
+2. python pkl_U_dipole_data2csv.py N
