@@ -326,7 +326,7 @@ public:
         this->Theta = arma::zeros<arma::dmat>(N0 * N1, N0 * N1);
         this->Lambda = arma::zeros<arma::dmat>(N0 * N1, N0 * N1);
 
-        this->unif_in_0_N0N1 = std::uniform_int_distribution<int>(0, N0 * N1);
+        this->unif_in_0_N0N1 = std::uniform_int_distribution<int>(0, N0 * N1-1);
 
         this->dipole_upper_bound = 1.0 / 4.0 * 1.0 / std::sqrt(3.0) * a * q;
         this->dipole_lower_bound = -dipole_upper_bound;

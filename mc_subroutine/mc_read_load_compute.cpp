@@ -343,6 +343,42 @@ void mc_computation::init_Px_Py_Qx_Qy()
         this->load_pickle_data(Qx_inFileName, Qx_init, N0 * N1);
         this->load_pickle_data(Qy_inFileName, Qy_init, N0 * N1);
     } //end flushLastFile==-1
+    else
+    {
+        name="flushEnd"+std::to_string(this->flushLastFile);
+        Px_inFileName=out_Px_path+"/"+name+".Px.pkl";
+
+        Py_inFileName=out_Py_path+"/"+name+".Py.pkl";
+
+        Qx_inFileName=out_Qx_path+"/"+name+".Qx.pkl";
+
+        Qy_inFileName=out_Qy_path+"/"+name+".Qy.pkl";
+
+        //load Px
+        this->load_pickle_data(Px_inFileName,Px_all_ptr,sweepToWrite * N0 * N1);
+        //copy last N0*N1 elements of to Px_init
+        std::memcpy(Px_init.get(),Px_all_ptr.get()+N0*N1*(sweepToWrite-1),
+            N0*N1*sizeof(double));
+
+        //load Py
+        this->load_pickle_data(Py_inFileName,Py_all_ptr,sweepToWrite * N0 * N1);
+        //copy last N0*N1 elements of to Py_init
+        std::memcpy(Py_init.get(),Py_all_ptr.get()+N0*N1*(sweepToWrite-1),
+            N0*N1*sizeof(double));
+
+
+        //load Qx
+        this->load_pickle_data(Qx_inFileName,Qx_all_ptr,sweepToWrite * N0 * N1);
+        //copy last N0*N1 elements of to Qx_init
+        std::memcpy(Qx_init.get(),Qx_all_ptr.get()+N0*N1*(sweepToWrite-1),
+            N0*N1*sizeof(double));
+
+        //load Qy
+        this->load_pickle_data(Qy_inFileName,Qy_all_ptr,sweepToWrite * N0 * N1);
+        //copy last N0*N1 elements of to Qy_init
+        std::memcpy(Qy_init.get(),Qy_all_ptr.get()+N0*N1*(sweepToWrite-1),
+            N0*N1*sizeof(double));
+    }
 }
 
 
@@ -485,6 +521,7 @@ void mc_computation::init_and_run()
 {
     this->init_mats();
     this->init_Px_Py_Qx_Qy();
+    this->execute_mc(Px_init,Py_init,Qx_init,Qy_init,newFlushNum);
 }
 
 
@@ -512,10 +549,70 @@ void mc_computation::execute_mc(const std::shared_ptr<double[]>& Px_vec,
     int sweepStart =flushThisFileStart*sweepToWrite*sweep_multiple;
     for (int fls = 0; fls < flushNum; fls++)
     {
+        const auto tMCStart{std::chrono::steady_clock::now()};
         for (int swp = 0; swp < sweepToWrite*sweep_multiple; swp++)
         {
+            // std::cout<<"swp="<<swp<<std::endl;
+            this->execute_mc_one_sweep(Px_arma_vec_curr,
+                Py_arma_vec_curr,
+                Qx_arma_vec_curr,
+                Qy_arma_vec_curr,
+                UCurr,
+                Px_arma_vec_next,
+                Py_arma_vec_next,
+                Qx_arma_vec_next,
+                Qy_arma_vec_next);
+            if(swp%sweep_multiple==0)
+            {
+                int swp_out=swp/sweep_multiple;
+                this->U_data_all_ptr[swp_out]=UCurr;
+
+                std::memcpy(Px_all_ptr.get()+swp_out*N0*N1,Px_arma_vec_curr.memptr(),N0*N1*sizeof(double));
+
+                std::memcpy(Py_all_ptr.get()+swp_out*N0*N1,Py_arma_vec_curr.memptr(),N0*N1*sizeof(double));
+
+                std::memcpy(Qx_all_ptr.get()+swp_out*N0*N1,Qx_arma_vec_curr.memptr(),N0*N1*sizeof(double));
+
+                std::memcpy(Qy_all_ptr.get()+swp_out*N0*N1,Qy_arma_vec_curr.memptr(),N0*N1*sizeof(double));
+            }//end save to array
         }//end sweep for
+        int flushEnd=flushThisFileStart+fls;
+        std::string fileNameMiddle =  "flushEnd" + std::to_string(flushEnd);
+
+        std::string out_U_PickleFileName = out_U_path+"/" + fileNameMiddle + ".U.pkl";
+
+        std::string out_Px_PickleFileName=out_Px_path+"/"+fileNameMiddle+".Px.pkl";
+
+        std::string out_Py_PickleFileName=out_Py_path+"/"+fileNameMiddle+".Py.pkl";
+
+        std::string out_Qx_PickleFileName=out_Qx_path+"/"+fileNameMiddle+".Qx.pkl";
+
+        std::string out_Qy_PickleFileName=out_Qy_path+"/"+fileNameMiddle+".Qy.pkl";
+
+        //save U
+        this->save_array_to_pickle(U_data_all_ptr,sweepToWrite,out_U_PickleFileName);
+        //save Px
+        this->save_array_to_pickle(Px_all_ptr,sweepToWrite*N0*N1,out_Px_PickleFileName);
+
+        //save Py
+        this->save_array_to_pickle(Py_all_ptr,sweepToWrite*N0*N1,out_Py_PickleFileName);
+
+        //save Qx
+        this->save_array_to_pickle(Qx_all_ptr,sweepToWrite*N0*N1,out_Qx_PickleFileName);
+
+        //save Qy
+        this->save_array_to_pickle(Qy_all_ptr,sweepToWrite*N0*N1,out_Qy_PickleFileName);
+
+
+
+
+        const auto tMCEnd{std::chrono::steady_clock::now()};
+        const std::chrono::duration<double> elapsed_secondsAll{tMCEnd - tMCStart};
+        std::cout << "flush " + std::to_string(flushEnd)  + ": "
+                  << elapsed_secondsAll.count() / 3600.0 << " h" << std::endl;
+
     }//end flush for loop
+    std::cout << "mc executed for " << flushNum << " flushes." << std::endl;
 
 }
 
@@ -653,6 +750,7 @@ void mc_computation::execute_mc_one_sweep(arma::dvec& Px_arma_vec_curr,
         double r = this->acceptanceRatio_uni(Px_arma_vec_curr, Px_arma_vec_next,
                                              flattened_ind, UCurr, UNext);
         double u = distUnif01(e2);
+        // std::cout<<"u="<<u<<std::endl;
         if (u <= r)
         {
             Px_arma_vec_curr = Px_arma_vec_next;
@@ -708,6 +806,15 @@ void mc_computation::execute_mc_one_sweep(arma::dvec& Px_arma_vec_curr,
                          Py_arma_vec_curr,
                          Qx_arma_vec_curr,
                          UCurr, UNext);
+        double r=this->acceptanceRatio_uni(Qy_arma_vec_curr,Qy_arma_vec_next,flattened_ind,UCurr,
+            UNext);
+        double u = distUnif01(e2);
+        if (u <= r)
+        {
+            Qy_arma_vec_curr=Qy_arma_vec_next;
+            UCurr = UNext;
+        }//end of accept-reject
+
     } //end updating Qy
 }
 
