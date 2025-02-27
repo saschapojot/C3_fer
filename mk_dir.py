@@ -122,7 +122,7 @@ def contents_to_conf(k):
         "effective_data_num_required=1000\n",
         "\n",
         "#this is the data number in each pkl file, i.e., in each flush\n"
-        "sweep_to_write=200\n",
+        "sweep_to_write=500\n",
         "\n",
         "#within each flush,  sweep_to_write*sweep_multiple mc computations are executed\n",
         "\n",
@@ -132,7 +132,7 @@ def contents_to_conf(k):
         "\n",
         "#the configurations of the system are saved to file if the sweep number is a multiple of sweep_multiple\n",
         "\n",
-        "sweep_multiple=300\n",
+        "sweep_multiple=700\n",
         ]
     outDir=dataOutDir+f"/N{NStr}/"+"/T"+TStrAll[k]+"/"
     Path(outDir).mkdir(exist_ok=True,parents=True)

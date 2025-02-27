@@ -10,7 +10,7 @@ add_executable(run_mc run_mc.cpp mc_subroutine/mc_read_load_compute.cpp mc_subro
 
 
 set_source_files_properties(
-        mc_subroutine/mc_read_load_compute.hpp
+        mc_subroutine/mc_read_load_compute.cpp
         PROPERTIES
 
         COMPILE_OPTIONS "-O3"
@@ -24,8 +24,8 @@ set_source_files_properties(
 )
 
 
-set(Python3_INCLUDE_DIRS "/home/adada/anaconda3/include/python3.12")
-set(Python3_LIBRARIES "/home/adada/anaconda3/lib/libpython3.12.so")
+set(Python3_INCLUDE_DIRS "/home/adada/anaconda3/include/python3.9")
+set(Python3_LIBRARIES "/home/adada/anaconda3/lib/libpython3.9.so")
 include_directories(${Python3_INCLUDE_DIRS})
 include_directories("/home/adada/cppLocal/armadillo/include")
 
@@ -58,3 +58,4 @@ target_link_libraries(run_mc ${Python3_LIBRARIES})
 #armadillo
 file(GLOB LIBS_SO "/home/adada/cppLocal/armadillo/lib/libarmadillo.so")
 target_link_libraries(run_mc ${LIBS_SO})
+
