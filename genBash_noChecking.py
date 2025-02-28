@@ -1,6 +1,6 @@
 from pathlib import Path
 from decimal import Decimal, getcontext
-
+import os
 import numpy as np
 import pandas as pd
 
@@ -16,9 +16,10 @@ def format_using_decimal(value, precision=15):
 
 
 outPath="./bashFiles_noChecking/"
+os.rmdir(outPath)
 Path(outPath).mkdir(exist_ok=True,parents=True)
 N=5 #unit cell number
-TVals=[0.1,1,2,3,4,5,6,7,8,9,10]
+TVals=[10,11,13,15]
 
 TStrAll=[]
 for k in range(0,len(TVals)):
@@ -38,7 +39,7 @@ def contents_to_bash_noChecking(k):
         "#SBATCH -p CLUSTER\n"
         "#SBATCH --mem=8GB\n",
         f"#SBATCH -o outmcT{TStr}.out\n",
-        f"#SBATCH -e outmcT{TStr}.out\n",
+        f"#SBATCH -e outmcT{TStr}.err\n",
         "cd /home/cywanag/data/hpc/cywanag/liuxi/Document/cppCode/C3_fer\n",
         f"python3 -u exec_noChecking.py {TStr} {N}\n"
     ]

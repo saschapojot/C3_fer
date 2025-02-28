@@ -1,6 +1,6 @@
 from pathlib import Path
 from decimal import Decimal, getcontext
-
+import os
 import numpy as np
 import pandas as pd
 
@@ -16,10 +16,11 @@ def format_using_decimal(value, precision=15):
 
 
 outPath="./bashFiles_checking/"
+os.rmdir(outPath)
 Path(outPath).mkdir(exist_ok=True,parents=True)
 N=5 #unit cell number
-TVals=[0.1,1,2,3,4,5,6,7,8,9,10]
-
+TVals=[0.5,11,13,15]
+lastFileNum=25
 TStrAll=[]
 # print(TDirsAll)
 for k in range(0,len(TVals)):
@@ -40,9 +41,9 @@ def contents_to_bash(k):
         "#SBATCH -p CLUSTER\n"
         "#SBATCH --mem=8GB\n",
         f"#SBATCH -o outmcT{TStr}.out\n",
-        f"#SBATCH -e outmcT{TStr}.out\n",
+        f"#SBATCH -e outmcT{TStr}.err\n",
         "cd /home/cywanag/data/hpc/cywanag/liuxi/Document/cppCode/C3_fer\n",
-        f"python3 -u exec_checking.py {TStr} {N} 15\n"
+        f"python3 -u exec_checking.py {TStr} {N} {lastFileNum}\n"
         ]
 
     outBashName=outPath+f"/run_mcT{TStr}_checking.sh"
