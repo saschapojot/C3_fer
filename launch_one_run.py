@@ -47,7 +47,7 @@ if parseSummaryResult.returncode!=0:
 match_summaryJson=re.match(r"jsonFromSummary=(.+)$",parseSummaryResult.stdout)
 if match_summaryJson:
     jsonFromSummary=json.loads(match_summaryJson.group(1))
-# print(jsonFromSummary)
+print(jsonFromSummary)
 
 ##################################################
 

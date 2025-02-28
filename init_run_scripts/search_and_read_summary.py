@@ -184,8 +184,8 @@ for oneLine in linesInSummaryFile:
 newMcStepNum=lag*newDataPointNum
 # print(newMcStepNum)
 # print(sweep_to_write)
-newFlushNum=int(np.ceil(newMcStepNum/(swpNumInOneFlush)))
-
+newFlushNum=int(np.ceil(newMcStepNum/(sweep_to_write)))
+# print(f"newFlushNum={newFlushNum}")
 jsonFromSummaryStr=create_jsonFromSummary(startingFileInd,newMcStepNum,
                                           newDataPointNum,newFlushNum,TDirRoot,U_dipole_dataDir)
 jsonFromSummary_stdout="jsonFromSummary="+jsonFromSummaryStr
