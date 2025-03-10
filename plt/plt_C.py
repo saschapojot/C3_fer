@@ -123,22 +123,36 @@ for k in range(0,len(sortedTFiles)):
     CValsAll.append(jackknife_estimate)
     interval_lowerValsAll.append(ci_lower)
     interval_upperValsAll.append(ci_upper)
-sortedTVals=np.array(sortedTVals)
-TInds=np.where(sortedTVals>0.1)
-TToPlt=sortedTVals[TInds]
-interval_lowerValsAll=np.array(interval_lowerValsAll)
-interval_upperValsAll=np.array(interval_upperValsAll)
-CValsAll=np.array(CValsAll)
+csv_file_name=csvDataFolderRoot+"C_plot.csv"
 
-C_err_bar=CValsAll-interval_lowerValsAll
-#plt C
-fig,ax=plt.subplots()
-ax.errorbar(TToPlt,CValsAll[TInds],yerr=C_err_bar[TInds],fmt='o',color="black", ecolor='r', capsize=5,label='mc')
+df=pd.DataFrame({
+    "T":sortedTVals,
+    "C":np.array(CValsAll),
+    "lower":interval_lowerValsAll,
+    "upper":interval_upperValsAll
+}
+)
+df.to_csv(csv_file_name,index=False)
 
-ax.set_xlabel('$T$')
-ax.set_ylabel("C")
-ax.set_xscale("log")
-ax.set_title("C per unit cell, unit cell number="+str(unitCellNum))
-plt.legend(loc="best")
-plt.savefig(csvDataFolderRoot+"/C.png")
-plt.close()
+# sortedTVals=np.array(sortedTVals)
+# TInds=np.where(sortedTVals>0.2)
+# TToPlt=sortedTVals[TInds]
+# interval_lowerValsAll=np.array(interval_lowerValsAll)
+# interval_upperValsAll=np.array(interval_upperValsAll)
+# CValsAll=np.array(CValsAll)
+# print(CValsAll)
+# C_err_bar=CValsAll-interval_lowerValsAll
+# #plt C
+# fig,ax=plt.subplots()
+# ax.errorbar(TToPlt,CValsAll[TInds],yerr=C_err_bar[TInds],fmt='o',color="black", ecolor='r', capsize=5,label='mc')
+#
+# ax.set_xlabel('$T$')
+# ax.set_ylabel("C")
+# ax.set_xscale("log")
+# ax.set_title("C per unit cell, unit cell number="+str(unitCellNum))
+# plt.legend(loc="best")
+# ax.set_xticks([1, 1.5,2, 4,6])
+#
+# ax.set_xticklabels(["1", "1.5", "2", "4","6"])
+# plt.savefig(csvDataFolderRoot+"/C.png")
+# plt.close()

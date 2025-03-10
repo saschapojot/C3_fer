@@ -98,6 +98,7 @@ def generate_one_U_point(oneTFile):
 UValsAll=[]
 interval_lowerValsAll=[]
 interval_upperValsAll=[]
+
 for k in range(0,len(sortedTFiles)):
     oneTFile=sortedTFiles[k]
     jackknife_estimate,ci_lower, ci_upper=generate_one_U_point(oneTFile)
@@ -105,23 +106,37 @@ for k in range(0,len(sortedTFiles)):
     interval_lowerValsAll.append(ci_lower)
     interval_upperValsAll.append(ci_upper)
 
-
-sortedTVals=np.array(sortedTVals)
-TInds=np.where(sortedTVals<400)
-TToPlt=sortedTVals[TInds]
-interval_lowerValsAll=np.array(interval_lowerValsAll)
-interval_upperValsAll=np.array(interval_upperValsAll)
-UValsAll=np.array(UValsAll)
-
-U_err_bar=UValsAll-interval_lowerValsAll
+csv_file_name=csvDataFolderRoot+"U_plot.csv"
+df=pd.DataFrame({
+    "T":sortedTVals,
+    "U":np.array(UValsAll),
+    "lower":interval_lowerValsAll,
+    "upper":interval_upperValsAll
+}
+)
+df.to_csv(csv_file_name,index=False)
+#
+# sortedTVals=np.array(sortedTVals)
+# TInds=np.where(sortedTVals>0)
+# TToPlt=sortedTVals[TInds]
+# print(f"TToPlt={TToPlt}")
+# interval_lowerValsAll=np.array(interval_lowerValsAll)
+# interval_upperValsAll=np.array(interval_upperValsAll)
+# UValsAll=np.array(UValsAll)
+#
+# U_err_bar=UValsAll-interval_lowerValsAll
 
 #plt U
-fig,ax=plt.subplots()
-ax.errorbar(TToPlt,UValsAll[TInds],yerr=U_err_bar[TInds],fmt='o',color="black", ecolor='r', capsize=5,label='mc')
-
-ax.set_xlabel('$T$')
-ax.set_ylabel("U")
-ax.set_title("U per unit cell, unit cell number="+str(N**2))
-plt.legend(loc="best")
-plt.savefig(csvDataFolderRoot+"/UPerUnitCell.png")
-plt.close()
+# fig,ax=plt.subplots()
+# ax.errorbar(TToPlt,UValsAll[TInds],yerr=U_err_bar[TInds],fmt='o',color="black", ecolor='r', capsize=5,label='mc')
+# ax.set_xscale("log")
+# ax.set_xlabel('$T$')
+# ax.set_ylabel("U")
+# ax.set_xticks([1, 1.5,2, 4,6])
+#
+# ax.set_xticklabels(["1", "1.5", "2", "4","6"])
+# ax.set_title("U per unit cell, unit cell number="+str(N**2))
+# plt.legend(loc="best")
+#
+# plt.savefig(csvDataFolderRoot+"/UPerUnitCell.png")
+# plt.close()
