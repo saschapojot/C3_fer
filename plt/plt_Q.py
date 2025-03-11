@@ -98,7 +98,7 @@ for k in range(0,len(sortedTFiles)):
 
 
 sortedTVals=np.array(sortedTVals)
-TInds=np.where(sortedTVals<400)
+TInds=np.where(sortedTVals>0.2)
 TToPlt=sortedTVals[TInds]
 interval_lowerValsAll=np.array(interval_lowerValsAll)
 interval_upperValsAll=np.array(interval_upperValsAll)
@@ -108,6 +108,7 @@ Q_abs_br=Q_abs_valsAll-interval_lowerValsAll
 fig,ax=plt.subplots()
 ax.errorbar(TToPlt,Q_abs_valsAll[TInds],yerr=Q_abs_br[TInds],fmt='o',color="black", ecolor='r', capsize=5,label='mc')
 ax.set_xlabel('$T$')
+ax.set_xscale("log")
 ax.set_ylabel("$|Q|$")
 ax.set_title("$|Q|$ per unit cell, unit cell number="+str(N**2))
 plt.legend(loc="best")

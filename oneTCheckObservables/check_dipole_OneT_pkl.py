@@ -15,28 +15,30 @@ import pickle
 
 
 
-#This script checks if U values reach equilibrium and writes summary file of dist
+#This script checks if total dipole values reach equilibrium and writes summary file of dist
 #This file checks pkl files
 
 argErrCode=2
 sameErrCode=3
 missingErrCode=4
-eps_for_auto_corr=1e-2
-if (len(sys.argv)!=4):
+eps_for_auto_corr=3e-1
+if (len(sys.argv)!=3):
     print("wrong number of arguments")
     exit(argErrCode)
 
-jsonFromSummaryLast=json.loads(sys.argv[1])
-jsonDataFromConf=json.loads(sys.argv[2])
-lastFileNum=int(sys.argv[3])
-TDirRoot=jsonFromSummaryLast["TDirRoot"]
-U_dipole_dataDir=jsonFromSummaryLast["U_dipole_dataDir"]
+# jsonFromSummaryLast=json.loads(sys.argv[1])
+jsonDataFromConf=json.loads(sys.argv[1])
+lastFileNum=int(sys.argv[2])
+confFileName=jsonDataFromConf["confFileName"]
+TDirRoot=os.path.dirname(confFileName)
+U_dipole_dataDir=TDirRoot+"/U_dipole_dataFiles/"
 effective_data_num_required=int(jsonDataFromConf["effective_data_num_required"])
+
 
 N=int(jsonDataFromConf["N"])
 sweep_to_write=int(jsonDataFromConf["sweep_to_write"])
-summary_U_dipoleFile=TDirRoot+"/summary_U_dipole.txt"
-# lastFileNum=7
+summary_U_dipoleFile=TDirRoot+"/summary_polarization.txt"
+
 def sort_data_files_by_flushEnd(oneDir):
     dataFilesAll=[]
     flushEndAll=[]
@@ -76,7 +78,7 @@ def auto_corrForOneVec(vec):
     :return:
     """
     same=False
-    NLags=int(len(vec)*3/4)
+    NLags=int(len(vec)*9/10)
     with warnings.catch_warnings():
         warnings.filterwarnings("error")
     try:
@@ -91,6 +93,7 @@ def auto_corrForOneVec(vec):
         lagVal=np.where(acfOfVecAbs<=eps_for_auto_corr)[0][0]
 
     return same,lagVal
+
 
 def ksTestOneColumn(vec,lag):
     """
@@ -113,41 +116,8 @@ def ksTestOneColumn(vec,lag):
 
     return result.pvalue,result.statistic, lenPart*2
 
-def checkUDataFilesForOneT(UData_dir):
-    U_sortedDataFilesToRead=sort_data_files_by_flushEnd(UData_dir)
-    if len(U_sortedDataFilesToRead)==0:
-        print("no data for U.")
-        exit(0)
-
-    startingFileInd=parseSummaryU_dipole()
-    if startingFileInd<0:
-        #we guess that the equilibrium starts at this file
-        startingFileInd=len(U_sortedDataFilesToRead)-lastFileNum
-    startingFileName=U_sortedDataFilesToRead[startingFileInd]
-    with open(startingFileName,"rb") as fptr:
-        inArrStart=pickle.load(fptr)
-
-    U_arr=inArrStart
-    #read the rest of the pkl files
-    for pkl_file in U_sortedDataFilesToRead[(startingFileInd+1):]:
-        with open(pkl_file,"rb") as fptr:
-            inArr=pickle.load(fptr)
-        U_arr=np.append(U_arr,inArr)
-
-    sameUTmp,lagUTmp=auto_corrForOneVec(U_arr)
-
-    if sameUTmp==True or lagUTmp==-1:
-        return [sameUTmp,lagUTmp,-1,-1,-1,-1]
-
-    pUTmp,statUTmp,lengthUTmp=ksTestOneColumn(U_arr,lagUTmp)
-    numDataPoints=lengthUTmp
-
-    return [sameUTmp,lagUTmp,pUTmp,statUTmp,numDataPoints,startingFileInd]
-
-
 
 def check_DipoleDataFilesForOneT(Px_dir,Py_dir,Qx_dir,Qy_dir):
-
     Px_sortedDataFilesToRead=sort_data_files_by_flushEnd(Px_dir)
     # print(f"Px_sortedDataFilesToRead={Px_sortedDataFilesToRead}")
     Py_sortedDataFilesToRead=sort_data_files_by_flushEnd(Py_dir)
@@ -168,6 +138,7 @@ def check_DipoleDataFilesForOneT(Px_dir,Py_dir,Qx_dir,Qy_dir):
     if diff2>0:
         print(f"diff2={diff2}, data missing.")
         exit(missingErrCode)
+
     startingFileInd=parseSummaryU_dipole()
     if startingFileInd<0:
         #we guess that the equilibrium starts at this file
@@ -180,10 +151,6 @@ def check_DipoleDataFilesForOneT(Px_dir,Py_dir,Qx_dir,Qy_dir):
     Qx_startingFileName=Qx_sortedDataFilesToRead[startingFileInd]
 
     Qy_startingFileName=Qy_sortedDataFilesToRead[startingFileInd]
-    # print(f"Px_startingFileName={Px_startingFileName}")
-    # print(f"Py_startingFileName={Py_startingFileName}")
-    # print(f"Qx_startingFileName={Qx_startingFileName}")
-    # print(f"Qy_startingFileName={Qy_startingFileName}")
 
     #read Px
     with open(Px_startingFileName,"rb") as fptr:
@@ -224,6 +191,7 @@ def check_DipoleDataFilesForOneT(Px_dir,Py_dir,Qx_dir,Qy_dir):
     with open(Qy_startingFileName,"rb") as fptr:
         Qy_inArrStart=np.array(pickle.load(fptr))
     Qy_arr=Qy_inArrStart.reshape((sweep_to_write,-1))
+
     #read the rest of Qy pkl files
     for pkl_file in Qy_sortedDataFilesToRead[(startingFileInd+1):]:
         with open(pkl_file,"rb") as fptr:
@@ -231,112 +199,56 @@ def check_DipoleDataFilesForOneT(Px_dir,Py_dir,Qx_dir,Qy_dir):
         Qy_inArr=Qy_inArr.reshape((sweep_to_write,-1))
         Qy_arr=np.concatenate((Qy_arr,Qy_inArr),axis=0)
 
-    # Px_avg=np.mean(Px_arr,axis=1)
-
-    # Py_avg=np.mean(Py_arr,axis=1)
-
-    # Qx_avg=np.mean(Qx_arr,axis=1)
-
-    # Qy_avg=np.mean(Qy_arr,axis=1)
-    # print(Qy_avg[-40:])
-
-
-
-    # sameTmp_Px,lagTmp_Px=auto_corrForOneVec(Px_avg)
-
-    # sameTmp_Py,lagTmp_Py=auto_corrForOneVec(Py_avg)
-
-    # sameTmp_Qx,lagTmp_Qx=auto_corrForOneVec(Qx_avg)
-
-    # sameTmp_Qy,lagTmp_Qy=auto_corrForOneVec(Qy_avg)
     dipole_x=Px_arr+Qx_arr
-
     dipole_y=Py_arr+Qy_arr
-    dipole_x_avg=np.mean(dipole_x,axis=1)
-    dipole_y_avg=np.mean(dipole_y,axis=1)
 
-    dipole_abs_avg=np.sqrt(dipole_x_avg**2+dipole_y_avg**2)
-    sameTmp_dipole,lagTmp_dipole=auto_corrForOneVec(dipole_abs_avg)
+    polarization_x=np.mean(dipole_x,axis=1)
+    polarization_y=np.mean(dipole_y,axis=1)
 
-    # same_vec_PxPyQxQy=[sameTmp_Px,sameTmp_Py,sameTmp_Qx,sameTmp_Qy]
-    # lag_vec_PxPyQxQy=[lagTmp_Px,lagTmp_Py,lagTmp_Qx,lagTmp_Qy]
-    same_vec_PxPyQxQy=[sameTmp_dipole]
-    lag_vec_PxPyQxQy=[lagTmp_dipole]
-    # print(f"lag_vec_PxPyQxQy={lag_vec_PxPyQxQy}")
-    if any(same_vec_PxPyQxQy) or -1 in lag_vec_PxPyQxQy:
-        return [-2],[-1],-1,[]
+    sameTmp_polarization_x,lagTmp_polarization_x=auto_corrForOneVec(polarization_x)
+    sameTmp_polarization_y,lagTmp_polarization_y=auto_corrForOneVec(polarization_y)
 
+    same_vec=[sameTmp_polarization_x,sameTmp_polarization_y]
+    lag_vec=[lagTmp_polarization_x,lagTmp_polarization_y]
 
+    if any(same_vec) or -1 in lag_vec:
+        return [-2],[-1],-1,[],-1
 
-    lagMax=np.max(lag_vec_PxPyQxQy)
+    lagMax=np.max(lag_vec)
 
-    # pTmp_Px,statTmp_Px,lengthTmp_Px=ksTestOneColumn(Px_avg,lagMax)
+    pTmp_polarization_x,statTmp_polarization_x,lengthTmp_polarization_x=ksTestOneColumn(polarization_x,lagMax)
 
-    # pTmp_Py,statTmp_Py,lengthTmp_Py=ksTestOneColumn(Py_avg,lagMax)
+    pTmp_polarization_y,statTmp_polarization_y,lengthTmp_polarization_y=ksTestOneColumn(polarization_y,lagMax)
 
-    # pTmp_Qx,statTmp_Qx,lengthTmp_Qx=ksTestOneColumn(Qx_avg,lagMax)
+    pVec=[pTmp_polarization_x,pTmp_polarization_y]
 
-    # pTmp_Qy,statTmp_Qy,lengthTmp_Qy=ksTestOneColumn(Qy_avg,lagMax)
-    pTmp_dipole,statTmp_dipole,lengthTmp_dipole=ksTestOneColumn(dipole_abs_avg,lagMax)
-    pVec=[pTmp_dipole]
-    statVec=[statTmp_dipole]
-
-    numDataPoints=lengthTmp_dipole
-    return pVec,statVec,numDataPoints,lag_vec_PxPyQxQy
-
-
-
-
-
-
-UDataDir=U_dipole_dataDir+"/U/"
-sameVec=[]
-lagVec=[]
-pVec=[]
-statVec=[]
-numDataVec=[]
-print("checking U")
-sameUTmp,lagUTmp,pUTmp,statUTmp,numDataPointsU,startingFileInd=checkUDataFilesForOneT(UDataDir)
-sameVec.append(sameUTmp)
-lagVec.append(lagUTmp)
-pVec.append(pUTmp)
-statVec.append(statUTmp)
-numDataVec.append(numDataPointsU)
-print("lagU="+str(lagUTmp))
-
-
+    statVec=[statTmp_polarization_x,statTmp_polarization_y]
+    numDataPoints=lengthTmp_polarization_x
+    return pVec,statVec,numDataPoints,lag_vec,startingFileInd
 Px_dir=U_dipole_dataDir+"/Px/"
 Py_dir=U_dipole_dataDir+"/Py/"
 Qx_dir=U_dipole_dataDir+"/Qx/"
 Qy_dir=U_dipole_dataDir+"/Qy/"
-
-# pVec_vec_PxPyQxQy,statVec_vec_PxPyQxQy,numDataPoints_PxPyQxQy,lag_vec_PxPyQxQy=check_DipoleDataFilesForOneT(Px_dir,Py_dir,Qx_dir,Qy_dir)
-
-# pVec+=pVec_vec_PxPyQxQy
-# statVec+=statVec_vec_PxPyQxQy
-
-# lagVecAll=[lagUTmp]+lag_vec_PxPyQxQy
-lagVecAll=[lagUTmp]
-lagMax=np.max(lagVecAll)
-# numDataPoints=np.min([numDataPointsU,numDataPoints_PxPyQxQy])
-numDataPoints=np.min([numDataPointsU])
+pVec,statVec,numDataPoints,lag_vec,startingFileInd=check_DipoleDataFilesForOneT(Px_dir,Py_dir,Qx_dir,Qy_dir)
+lagMax=np.max(lag_vec)
 print("lagMax="+str(lagMax))
 print("numDataPoints="+str(numDataPoints))
 print(f"pVec={pVec}")
 print(f"statVec={statVec}")
-############################################
-
 statThreshhold=0.1
 if pVec[0]==-2:
     with open(summary_U_dipoleFile,"w+") as fptr:
         msg="error: same\n"
         fptr.writelines(msg)
         exit(sameErrCode)
+
+
 if numDataPoints<0:
     msg="high correlation"
     with open(summary_U_dipoleFile,"w+") as fptr:
         fptr.writelines(msg)
     exit(0)
+
 
 if (np.min(pVec)>=0.01 or np.max(statVec)<=statThreshhold) and numDataPoints>=200:
     if numDataPoints>=effective_data_num_required:

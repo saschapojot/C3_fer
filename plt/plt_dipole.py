@@ -105,7 +105,7 @@ for k in range(0,len(sortedTFiles)):
     interval_upperValsAll.append(ci_upper)
 
 sortedTVals=np.array(sortedTVals)
-TInds=np.where(sortedTVals<400)
+TInds=np.where(sortedTVals>0.2)
 TToPlt=sortedTVals[TInds]
 interval_lowerValsAll=np.array(interval_lowerValsAll)
 interval_upperValsAll=np.array(interval_upperValsAll)
@@ -119,6 +119,7 @@ ax.errorbar(TToPlt,dipole_abs_valsAll[TInds],yerr=dipole_abs_br[TInds],fmt='o',c
 
 ax.set_xlabel('$T$')
 ax.set_ylabel("|dipole|")
+ax.set_xscale("log")
 ax.set_title("|dipole| per unit cell, unit cell number="+str(N**2))
 plt.legend(loc="best")
 plt.savefig(csvDataFolderRoot+"/dipole_absPerUnitCell.png")

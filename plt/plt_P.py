@@ -98,7 +98,7 @@ for k in range(0,len(sortedTFiles)):
     interval_upperValsAll.append(ci_upper)
 
 sortedTVals=np.array(sortedTVals)
-TInds=np.where(sortedTVals<400)
+TInds=np.where(sortedTVals>0.2)
 TToPlt=sortedTVals[TInds]
 interval_lowerValsAll=np.array(interval_lowerValsAll)
 interval_upperValsAll=np.array(interval_upperValsAll)
@@ -107,7 +107,7 @@ P_abs_valsAll=np.array(P_abs_valsAll)
 P_abs_br=P_abs_valsAll-interval_lowerValsAll
 fig,ax=plt.subplots()
 ax.errorbar(TToPlt,P_abs_valsAll[TInds],yerr=P_abs_br[TInds],fmt='o',color="black", ecolor='r', capsize=5,label='mc')
-
+ax.set_xscale("log")
 ax.set_xlabel('$T$')
 ax.set_ylabel("$|P|$")
 ax.set_title("$|P|$ per unit cell, unit cell number="+str(N**2))
