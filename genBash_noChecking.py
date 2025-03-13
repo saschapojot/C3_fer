@@ -1,6 +1,6 @@
 from pathlib import Path
 from decimal import Decimal, getcontext
-import os
+import shutil
 import numpy as np
 import pandas as pd
 
@@ -16,10 +16,10 @@ def format_using_decimal(value, precision=15):
 
 
 outPath="./bashFiles_noChecking/"
-os.rmdir(outPath)
+shutil.rmtree(outPath)
 Path(outPath).mkdir(exist_ok=True,parents=True)
 N=5 #unit cell number
-TVals=[10,11,13,15]
+TVals=[4,8,10,11,13]
 
 TStrAll=[]
 for k in range(0,len(TVals)):

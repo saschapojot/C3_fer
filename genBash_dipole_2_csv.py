@@ -4,7 +4,8 @@ import shutil
 import numpy as np
 import pandas as pd
 import os
-#this script creates slurm bash files for exec_checking.py
+#this script creates slurm bash files for ./data2csv/pkl_dipole_data2csv_oneT.py
+
 def format_using_decimal(value, precision=4):
     # Set the precision higher to ensure correct conversion
     getcontext().prec = precision + 2
@@ -15,10 +16,14 @@ def format_using_decimal(value, precision=4):
     return str(formatted_value)
 
 
-outPath="./bashFiles_checking/"
+outPath=("./bashFiles_dipole_2_csv/")
+
 if os.path.isdir(outPath):
     shutil.rmtree(outPath)
+
+
 Path(outPath).mkdir(exist_ok=True,parents=True)
+
 N=5 #unit cell number
 number=int((10-0.1)/0.01)
 TVals=[0.1+0.01*n for n in range(0,number+1)]
@@ -26,36 +31,30 @@ lastFileNum=20
 TStrAll=[]
 chunk_size = 100
 chunks = [TVals[i:i + chunk_size] for i in range(0, len(TVals), chunk_size)]
-# print(TDirsAll)
-# for k in range(0,len(TVals)):
-#     T=TVals[k]
-#     # print(T)
-#
-#     TStr=format_using_decimal(T)
-#     TStrAll.append(TStr)
-
 
 def contents_to_bash(chk_ind,T_ind,chunks):
-
     TStr=format_using_decimal(chunks[chk_ind][T_ind])
     contents=[
         "#!/bin/bash\n",
-        "#SBATCH -n 5\n",
+        "#SBATCH -n 2\n",
         "#SBATCH -N 1\n",
         "#SBATCH -t 0-60:00\n",
-        "#SBATCH -p hebhcnormal01\n"
-        "#SBATCH --mem=12GB\n",
-        f"#SBATCH -o outmcT{TStr}.out\n",
-        f"#SBATCH -e outmcT{TStr}.err\n",
-        "cd /public/home/hkust_jwliu_1/liuxi/Document/cppCode/C3_fer\n",
-        f"python3 -u exec_checking.py {TStr} {N} {lastFileNum}\n"
+        "#SBATCH -p hebhcnormal01\n",
+        "#SBATCH --mem=4GB\n",
+        f"#SBATCH -o out_polarization_{TStr}.out\n",
+        f"#SBATCH -e out_polarization_{TStr}.err\n",
+        "cd /public/home/hkust_jwliu_1/liuxi/Document/cppCode/C3_fer/data2csv\n",
+        f"python3 -u pkl_dipole_data2csv_oneT.py {N} {TStr}\n"
         ]
 
     out_chunk=outPath+f"/chunk{chk_ind}/"
     Path(out_chunk).mkdir(exist_ok=True,parents=True)
-    outBashName=out_chunk+f"/run_mcT{TStr}_checking.sh"
+    outBashName=out_chunk+f"/dipole_to_csv_T{TStr}.sh"
     with open(outBashName,"w+") as fptr:
         fptr.writelines(contents)
+
+
+
 
 for chk_ind in range(0,len(chunks)):
     for T_ind in range(0,len(chunks[chk_ind])):
