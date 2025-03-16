@@ -6,7 +6,7 @@ import re
 import glob
 from datetime import datetime
 import numpy as np
-
+#this script executes oneT_lattice_dipole.py
 # Ensure usage: the script expects one command line argument
 if len(sys.argv) != 2:
     print("wrong number of arguments")
