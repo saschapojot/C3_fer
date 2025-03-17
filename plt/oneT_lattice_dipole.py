@@ -8,9 +8,16 @@ import json
 import pandas as pd
 import scipy.stats as stats
 import os
-
+from decimal import Decimal, getcontext
 errFileNotExist=1
-
+def format_using_decimal(value, precision=4):
+    # Set the precision higher to ensure correct conversion
+    getcontext().prec = precision + 2
+    # Convert the float to a Decimal with exact precision
+    decimal_value = Decimal(str(value))
+    # Normalize to remove trailing zeros
+    formatted_value = decimal_value.quantize(Decimal(1)) if decimal_value == decimal_value.to_integral() else decimal_value.normalize()
+    return str(formatted_value)
 #this script converts Px, Py, Qx, Qy csv files to average
 
 #This script loads csv data and plot P+Q, with confidence interval
@@ -19,9 +26,9 @@ if (len(sys.argv)!=3):
     exit()
 
 N=int(sys.argv[1])
-TStr=float(sys.argv[2])
-csvDataFolderRoot=f"../dataAll/N{N}/csvOutAll/T{TStr}/"
-
+TStr=sys.argv[2]
+# csvDataFolderRoot=f"../dataAll/N{N}/csvOutAll/T{TStr}/"
+print(f"csvDataFolderRoot={csvDataFolderRoot}")
 Px_csv_file=csvDataFolderRoot+"/Px.csv"
 
 Py_csv_file=csvDataFolderRoot+"/Py.csv"

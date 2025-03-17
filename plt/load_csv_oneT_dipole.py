@@ -6,15 +6,21 @@ import os
 
 # This script plots dipoles for one T
 
-if len(sys.argv) != 3:
+if len(sys.argv) != 4:
     print("wrong number of arguments")
     exit(1)
 
 N = int(sys.argv[1])
-TStr = float(sys.argv[2])
+TStr = sys.argv[2]
+fileInd=sys.argv[3]
 csvDataFolderRoot = f"../dataAll/N{N}/csvOutAll/T{TStr}"
 dipole_csv_file_name = os.path.join(csvDataFolderRoot, "avg_dipole_combined.csv")
 U_csv_file_name=csvDataFolderRoot+"/U.csv"
+
+dataRoot = f"../dataAll/N{N}/csvOutAll/"
+dipole_each_site_dir=dataRoot+"/dipole_each_site/"
+avg_polarization_dir=dataRoot+"/avg_polarization/"
+
 if not os.path.exists(dipole_csv_file_name):
     print(f"avg_dipole_combined.csv does not exist for {TStr}")
     exit(1)
@@ -93,17 +99,18 @@ qB = plt.quiver(
     scale_units='xy',
     angles='xy'
 )
-
+U_mean_rounded=np.round(U_mean,4)
 plt.xlabel("x", fontsize=100)
 plt.ylabel("y", fontsize=100)
-plt.title(f"Dipole on each site for T = {TStr}, U = {U_mean}", fontsize=120)
+plt.title(f"Dipole on each site for T = {TStr}, U = {U_mean_rounded}", fontsize=120)
 plt.axis("equal")
 # plt.tight_layout()
 
 # Add colorbar from one of the quiver plots and increase number size on the colorbar.
 cbar = plt.colorbar(qA, label="Dipole Magnitude", fraction=0.046, pad=0.04)
 cbar.ax.tick_params(labelsize=120)
-plt.savefig(csvDataFolderRoot+"/dipole_each_site.png")
+plt.savefig(csvDataFolderRoot+f"/file_{fileInd}_dipole_each_site_T{TStr}.png")
+plt.savefig(dipole_each_site_dir+f"/file_{fileInd}_dipole_each_site_T{TStr}.png")
 plt.close()
 
 ##############################################################
@@ -133,12 +140,13 @@ plt.arrow(center_x, center_y, scaled_avg_polarization_x, scaled_avg_polarization
 # Add labels and title
 plt.xlabel("x", fontsize=12)
 plt.ylabel("y", fontsize=12)
-plt.title(f"polarization = [{np.round(avg_polarization_x,4)}, {np.round(avg_polarization_y,4)}]", fontsize=14)
+plt.title(f"T={TStr}, polarization = [{np.round(avg_polarization_x,4)}, {np.round(avg_polarization_y,4)}], U = {U_mean_rounded}", fontsize=14)
 plt.legend(loc='upper right')
 
 # Set equal aspect ratio for the plot
 plt.axis("equal")
 
 # Save the second figure
-plt.savefig(csvDataFolderRoot + "/avg_polarization.png")
+plt.savefig(csvDataFolderRoot + f"/file_{fileInd}_avg_polarization_T{TStr}.png")
+plt.savefig(avg_polarization_dir+f"/file_{fileInd}_avg_polarization_T{TStr}.png")
 plt.close()
