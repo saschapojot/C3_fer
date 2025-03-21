@@ -424,7 +424,7 @@ double mc_computation::S_uni(const double& x, const double& y, const double& a, 
     {
         return 1.0 / (y - a + epsilon);
     }
-    else if (a + epsilon <= y and y < b + epsilon)
+    else if (a + epsilon <= y and y < b - epsilon)
     {
         return 1.0 / (2.0 * epsilon);
     }
